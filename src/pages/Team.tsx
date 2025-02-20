@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import {
+import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -15,7 +16,6 @@ import { Plus, MoreVertical, Mail, Phone, Calendar } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
-import { supabase } from "@/lib/supabase";
 
 interface TeamMember {
   id: string;
@@ -70,8 +70,9 @@ const initialTeamMembers: TeamMember[] = [
 ];
 
 const Team = () => {
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(
+    JSON.parse(localStorage.getItem('teamMembers') || JSON.stringify(initialTeamMembers))
+  );
   const [newMember, setNewMember] = useState({
     name: '',
     role: '',
@@ -83,105 +84,48 @@ const Team = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { theme, setTheme } = useTheme();
 
-  // Fetch data team members
   useEffect(() => {
-    fetchTeamMembers();
-  }, []);
+    localStorage.setItem('teamMembers', JSON.stringify(teamMembers));
+  }, [teamMembers]);
 
-  const fetchTeamMembers = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('team_members')
-        .select('*');
-
-      if (error) throw error;
-
-      if (data) setTeamMembers(data);
-    } catch (error) {
-      toast.error('Error mengambil data team members');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddMember = async () => {
+  const handleAddMember = () => {
     if (!newMember.name || !newMember.role || !newMember.email) {
-      toast.error('Mohon isi semua field yang wajib');
+      toast.error('Please fill in all required fields');
       return;
     }
 
-    try {
-      const member = {
-        name: newMember.name,
-        role: newMember.role,
-        email: newMember.email,
-        phone: newMember.phone,
-        skills: newMember.skills.split(',').map(skill => skill.trim()),
-        availability: 100,
-        active_projects: 0,
-        tasks_completed: 0,
-        image: `https://api.dicebear.com/7.x/avataaars/svg?seed=${newMember.name}`
-      };
+    const member: TeamMember = {
+      id: Date.now().toString(),
+      name: newMember.name,
+      role: newMember.role,
+      email: newMember.email,
+      phone: newMember.phone,
+      skills: newMember.skills.split(',').map(skill => skill.trim()),
+      availability: 100,
+      activeProjects: 0,
+      tasksCompleted: 0,
+      image: `https://api.dicebear.com/7.x/avataaars/svg?seed=${newMember.name}`
+    };
 
-      const { error } = await supabase
-        .from('team_members')
-        .insert([member]);
-
-      if (error) throw error;
-
-      toast.success('Team member berhasil ditambahkan');
-      setNewMember({ name: '', role: '', email: '', phone: '', skills: '' });
-      fetchTeamMembers();
-    } catch (error) {
-      toast.error('Gagal menambahkan team member');
-      console.error(error);
-    }
+    setTeamMembers(prev => [...prev, member]);
+    setNewMember({ name: '', role: '', email: '', phone: '', skills: '' });
+    toast.success('Team member added successfully');
   };
 
-  const handleUpdateMember = async () => {
+  const handleUpdateMember = () => {
     if (!editingMember) return;
 
-    try {
-      const { error } = await supabase
-        .from('team_members')
-        .update({
-          name: editingMember.name,
-          role: editingMember.role,
-          email: editingMember.email,
-          phone: editingMember.phone,
-          availability: editingMember.availability
-        })
-        .eq('id', editingMember.id);
-
-      if (error) throw error;
-
-      toast.success('Team member berhasil diupdate');
-      setEditingMember(null);
-      setIsEditDialogOpen(false);
-      fetchTeamMembers();
-    } catch (error) {
-      toast.error('Gagal mengupdate team member');
-      console.error(error);
-    }
+    setTeamMembers(prev => 
+      prev.map(member => member.id === editingMember.id ? editingMember : member)
+    );
+    setEditingMember(null);
+    setIsEditDialogOpen(false);
+    toast.success('Team member updated successfully');
   };
 
-  const handleRemoveMember = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('team_members')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast.success('Team member berhasil dihapus');
-      fetchTeamMembers();
-    } catch (error) {
-      toast.error('Gagal menghapus team member');
-      console.error(error);
-    }
+  const handleRemoveMember = (id: string) => {
+    setTeamMembers(prev => prev.filter(member => member.id !== id));
+    toast.success('Team member removed successfully');
   };
 
   const openEditDialog = (member: TeamMember) => {
@@ -213,7 +157,7 @@ const Team = () => {
                   <Input
                     id="name"
                     value={newMember.name}
-                    onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+                    onChange={(e) => setNewMember({...newMember, name: e.target.value})}
                     placeholder="Enter name"
                   />
                 </div>
@@ -222,7 +166,7 @@ const Team = () => {
                   <Input
                     id="role"
                     value={newMember.role}
-                    onChange={(e) => setNewMember({ ...newMember, role: e.target.value })}
+                    onChange={(e) => setNewMember({...newMember, role: e.target.value})}
                     placeholder="Enter role"
                   />
                 </div>
@@ -232,7 +176,7 @@ const Team = () => {
                     id="email"
                     type="email"
                     value={newMember.email}
-                    onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
+                    onChange={(e) => setNewMember({...newMember, email: e.target.value})}
                     placeholder="Enter email"
                   />
                 </div>
@@ -241,7 +185,7 @@ const Team = () => {
                   <Input
                     id="phone"
                     value={newMember.phone}
-                    onChange={(e) => setNewMember({ ...newMember, phone: e.target.value })}
+                    onChange={(e) => setNewMember({...newMember, phone: e.target.value})}
                     placeholder="Enter phone number"
                   />
                 </div>
@@ -250,7 +194,7 @@ const Team = () => {
                   <Input
                     id="skills"
                     value={newMember.skills}
-                    onChange={(e) => setNewMember({ ...newMember, skills: e.target.value })}
+                    onChange={(e) => setNewMember({...newMember, skills: e.target.value})}
                     placeholder="Enter skills"
                   />
                 </div>
@@ -311,7 +255,7 @@ const Team = () => {
                     <DropdownMenuItem onClick={() => toast.info('Assign tasks feature coming soon')}>
                       Assign Tasks
                     </DropdownMenuItem>
-                    <DropdownMenuItem
+                    <DropdownMenuItem 
                       onClick={() => handleRemoveMember(member.id)}
                       className="text-destructive"
                     >
@@ -374,7 +318,7 @@ const Team = () => {
                   <Input
                     id="edit-name"
                     value={editingMember.name}
-                    onChange={(e) => setEditingMember({ ...editingMember, name: e.target.value })}
+                    onChange={(e) => setEditingMember({...editingMember, name: e.target.value})}
                   />
                 </div>
                 <div className="space-y-2">
@@ -382,7 +326,7 @@ const Team = () => {
                   <Input
                     id="edit-role"
                     value={editingMember.role}
-                    onChange={(e) => setEditingMember({ ...editingMember, role: e.target.value })}
+                    onChange={(e) => setEditingMember({...editingMember, role: e.target.value})}
                   />
                 </div>
                 <div className="space-y-2">
@@ -391,7 +335,7 @@ const Team = () => {
                     id="edit-email"
                     type="email"
                     value={editingMember.email}
-                    onChange={(e) => setEditingMember({ ...editingMember, email: e.target.value })}
+                    onChange={(e) => setEditingMember({...editingMember, email: e.target.value})}
                   />
                 </div>
                 <div className="space-y-2">
@@ -399,7 +343,7 @@ const Team = () => {
                   <Input
                     id="edit-phone"
                     value={editingMember.phone}
-                    onChange={(e) => setEditingMember({ ...editingMember, phone: e.target.value })}
+                    onChange={(e) => setEditingMember({...editingMember, phone: e.target.value})}
                   />
                 </div>
                 <div className="space-y-2">
@@ -410,7 +354,7 @@ const Team = () => {
                     min="0"
                     max="100"
                     value={editingMember.availability}
-                    onChange={(e) => setEditingMember({ ...editingMember, availability: Number(e.target.value) })}
+                    onChange={(e) => setEditingMember({...editingMember, availability: Number(e.target.value)})}
                   />
                 </div>
                 <Button onClick={handleUpdateMember} className="w-full">
