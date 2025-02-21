@@ -409,7 +409,11 @@ const Settings = () => {
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 border-none bg-transparent hover:bg-transparent"
                   onClick={() => setShowNewPassword(!showNewPassword)}
                 >
-                  {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showNewPassword ? (
+                    <EyeOff className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
+                  ) : (
+                    <Eye className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
+                  )}
                 </Button>
               </div>
               <Label htmlFor="confirmPassword">Confirm Password</Label>
@@ -426,7 +430,11 @@ const Settings = () => {
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 border-none bg-transparent hover:bg-transparent"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
-                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showConfirmPassword ? (
+                    <EyeOff className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
+                  ) : (
+                    <Eye className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
+                  )}
                 </Button>
               </div>
             </div>
