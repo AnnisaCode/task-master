@@ -13,24 +13,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Bell, Shield, Globe, Palette, Mail, Sun, Moon } from "lucide-react";
+import { useTheme } from "next-themes";
 
 const Settings = () => {
-  const [theme, setTheme] = useState(() => {
-    // Cek localStorage atau gunakan light sebagai default
-    return localStorage.getItem('theme') || 'light'
-  });
-
-  useEffect(() => {
-    // Update class pada element html
-    const root = window.document.documentElement;
-    root.classList.remove('light', 'dark');
-    root.classList.add(theme);
-    // Simpan preference ke localStorage
-    localStorage.setItem('theme', theme);
-  }, [theme]);
+  const { theme, setTheme } = useTheme();
 
   const toggleTheme = () => {
-    setTheme((prevTheme) => prevTheme === 'dark' ? 'light' : 'dark');
+    setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
   return (
