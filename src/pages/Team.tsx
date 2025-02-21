@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -115,7 +115,7 @@ const Team = () => {
   const handleUpdateMember = () => {
     if (!editingMember) return;
 
-    setTeamMembers(prev => 
+    setTeamMembers(prev =>
       prev.map(member => member.id === editingMember.id ? editingMember : member)
     );
     setEditingMember(null);
@@ -157,7 +157,7 @@ const Team = () => {
                   <Input
                     id="name"
                     value={newMember.name}
-                    onChange={(e) => setNewMember({...newMember, name: e.target.value})}
+                    onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
                     placeholder="Enter name"
                   />
                 </div>
@@ -166,7 +166,7 @@ const Team = () => {
                   <Input
                     id="role"
                     value={newMember.role}
-                    onChange={(e) => setNewMember({...newMember, role: e.target.value})}
+                    onChange={(e) => setNewMember({ ...newMember, role: e.target.value })}
                     placeholder="Enter role"
                   />
                 </div>
@@ -176,7 +176,7 @@ const Team = () => {
                     id="email"
                     type="email"
                     value={newMember.email}
-                    onChange={(e) => setNewMember({...newMember, email: e.target.value})}
+                    onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
                     placeholder="Enter email"
                   />
                 </div>
@@ -185,7 +185,7 @@ const Team = () => {
                   <Input
                     id="phone"
                     value={newMember.phone}
-                    onChange={(e) => setNewMember({...newMember, phone: e.target.value})}
+                    onChange={(e) => setNewMember({ ...newMember, phone: e.target.value })}
                     placeholder="Enter phone number"
                   />
                 </div>
@@ -194,7 +194,7 @@ const Team = () => {
                   <Input
                     id="skills"
                     value={newMember.skills}
-                    onChange={(e) => setNewMember({...newMember, skills: e.target.value})}
+                    onChange={(e) => setNewMember({ ...newMember, skills: e.target.value })}
                     placeholder="Enter skills"
                   />
                 </div>
@@ -255,7 +255,7 @@ const Team = () => {
                     <DropdownMenuItem onClick={() => toast.info('Assign tasks feature coming soon')}>
                       Assign Tasks
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => handleRemoveMember(member.id)}
                       className="text-destructive"
                     >
@@ -318,7 +318,7 @@ const Team = () => {
                   <Input
                     id="edit-name"
                     value={editingMember.name}
-                    onChange={(e) => setEditingMember({...editingMember, name: e.target.value})}
+                    onChange={(e) => setEditingMember({ ...editingMember, name: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
@@ -326,7 +326,7 @@ const Team = () => {
                   <Input
                     id="edit-role"
                     value={editingMember.role}
-                    onChange={(e) => setEditingMember({...editingMember, role: e.target.value})}
+                    onChange={(e) => setEditingMember({ ...editingMember, role: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
@@ -335,7 +335,7 @@ const Team = () => {
                     id="edit-email"
                     type="email"
                     value={editingMember.email}
-                    onChange={(e) => setEditingMember({...editingMember, email: e.target.value})}
+                    onChange={(e) => setEditingMember({ ...editingMember, email: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
@@ -343,7 +343,7 @@ const Team = () => {
                   <Input
                     id="edit-phone"
                     value={editingMember.phone}
-                    onChange={(e) => setEditingMember({...editingMember, phone: e.target.value})}
+                    onChange={(e) => setEditingMember({ ...editingMember, phone: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
@@ -354,7 +354,7 @@ const Team = () => {
                     min="0"
                     max="100"
                     value={editingMember.availability}
-                    onChange={(e) => setEditingMember({...editingMember, availability: Number(e.target.value)})}
+                    onChange={(e) => setEditingMember({ ...editingMember, availability: Number(e.target.value) })}
                   />
                 </div>
                 <Button onClick={handleUpdateMember} className="w-full">

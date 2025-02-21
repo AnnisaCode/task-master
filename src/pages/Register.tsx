@@ -9,12 +9,23 @@ import { supabase } from "@/lib/supabase";
 const Register = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    name: ''
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value
+    });
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    const { email, password, name } = formData;
+
     if (!email || !password || !name) {
       toast.error("Mohon isi semua field");
       return;
@@ -23,33 +34,23 @@ const Register = () => {
     try {
       setLoading(true);
 
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/login`,
           data: {
-            name: name,
-          }
-        }
+            full_name: name,
+          },
+        },
       });
 
-      console.log("Auth Response:", authData);
+      if (error) throw error;
 
-      if (authError) {
-        console.error("Auth Error:", authError);
-        throw authError;
+      if (data.user) {
+        toast.success("Registrasi berhasil! Silakan cek email Anda untuk verifikasi.");
+        navigate("/login");
       }
-
-      if (!authData.user) {
-        throw new Error("Gagal membuat akun");
-      }
-
-      toast.success("Registrasi berhasil! Silakan cek email Anda untuk verifikasi.");
-      navigate("/login");
-
-    } catch (error: unknown) {
-      console.error("Registration Error:", error);
+    } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message);
       } else {
@@ -70,14 +71,14 @@ const Register = () => {
         <form onSubmit={handleRegister} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="name" className="text-sm font-medium">
-              Full Name
+              Nama Lengkap
             </label>
             <Input
               id="name"
               type="text"
-              placeholder="Enter your name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="Masukkan nama lengkap"
             />
           </div>
           <div className="space-y-2">
@@ -87,9 +88,9 @@ const Register = () => {
             <Input
               id="email"
               type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Masukkan email"
             />
           </div>
           <div className="space-y-2">
@@ -99,9 +100,9 @@ const Register = () => {
             <Input
               id="password"
               type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Masukkan password"
             />
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
