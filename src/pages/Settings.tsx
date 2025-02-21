@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,15 +15,22 @@ import {
 import { Bell, Shield, Globe, Palette, Mail, Sun, Moon } from "lucide-react";
 
 const Settings = () => {
-  const [theme, setTheme] = useState('light');
+  const [theme, setTheme] = useState(() => {
+    // Cek localStorage atau gunakan light sebagai default
+    return localStorage.getItem('theme') || 'light'
+  });
+
+  useEffect(() => {
+    // Update class pada element html
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(theme);
+    // Simpan preference ke localStorage
+    localStorage.setItem('theme', theme);
+  }, [theme]);
 
   const toggleTheme = () => {
-    console.log(`Current theme: ${theme}`);
-    setTheme((prevTheme) => {
-      const newTheme = prevTheme === 'dark' ? 'light' : 'dark';
-      console.log(`New theme: ${newTheme}`);
-      return newTheme;
-    });
+    setTheme((prevTheme) => prevTheme === 'dark' ? 'light' : 'dark');
   };
 
   return (
@@ -128,14 +135,21 @@ const Settings = () => {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <Palette className="h-4 w-4" />
+                  {theme === 'dark' ? (
+                    <Moon className="h-4 w-4" />
+                  ) : (
+                    <Sun className="h-4 w-4" />
+                  )}
                   <Label>Dark Mode</Label>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Toggle dark mode theme
                 </p>
               </div>
-              <Switch onClick={toggleTheme} />
+              <Switch
+                checked={theme === 'dark'}
+                onCheckedChange={toggleTheme}
+              />
             </div>
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
