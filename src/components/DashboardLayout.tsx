@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger } from "@/components/ui/sidebar";
 import { LayoutDashboard, Users, CalendarDays, FileText, Settings, Menu, LogOut, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
+import { supabase } from "@/lib/supabase";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
@@ -16,16 +17,44 @@ const menuItems = [
 
 export const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [fullName, setFullName] = useState<string | null>(null);
   const navigate = useNavigate();
-  const userEmail = localStorage.getItem("userEmail");
   const { theme, setTheme } = useTheme();
 
-  const handleLogout = () => {
-    localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("userEmail");
-    localStorage.removeItem("userName");
-    toast.success("Logged out successfully");
-    navigate("/login");
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+
+      if (error || !user) {
+        navigate('/login');
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+
+      setUserEmail(user.email);
+      setFullName(profile?.full_name || 'User');
+    };
+
+    getUser();
+  }, [navigate]);
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      toast.success("Logged out successfully");
+      navigate("/login");
+    } catch (error) {
+      toast.error("Error logging out");
+      console.error(error);
+    }
   };
 
   const toggleTheme = () => {
@@ -57,7 +86,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
             </nav>
             <div className="px-3 py-4 border-t">
               <div className="px-3 py-2 text-sm text-muted-foreground">
-                Signed in as: {userEmail}
+                Signed in as: {fullName}
               </div>
               <Button
                 variant="ghost"
@@ -109,7 +138,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
               </nav>
               <div className="px-3 py-4 border-t">
                 <div className="px-3 py-2 text-sm text-muted-foreground">
-                  Signed in as: {userEmail}
+                  Signed in as: {fullName}
                 </div>
                 <Button
                   variant="ghost"
