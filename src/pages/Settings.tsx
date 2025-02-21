@@ -124,6 +124,15 @@ const Settings = () => {
 
       if (!user) throw new Error('User not found');
 
+      // Update auth user data
+      const { error: authError } = await supabase.auth.updateUser({
+        data: {
+          full_name: profile.full_name
+        }
+      });
+
+      if (authError) throw authError;
+
       // Update profile
       const { error: profileError } = await supabase
         .from('profiles')
@@ -157,7 +166,7 @@ const Settings = () => {
       console.error('Error saving settings:', error);
       toast({
         title: "Error",
-        description: "Failed to save settings",
+        description: error instanceof Error ? error.message : "Failed to save settings",
         variant: "destructive",
       });
     } finally {
