@@ -388,7 +388,7 @@ const Settings = () => {
         </div>
 
         {/* Language Settings */}
-        <div className="flex items-center justify-between">
+        {/* <div className="flex items-center justify-between">
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
               <Globe className="h-4 w-4" />
@@ -411,7 +411,7 @@ const Settings = () => {
               <SelectItem value="fr">French</SelectItem>
             </SelectContent>
           </Select>
-        </div>
+        </div> */}
 
         <div className="flex justify-end gap-4">
           <Button variant="outline" onClick={loadUserData} disabled={loading}>
