@@ -66,6 +66,8 @@ const Settings = () => {
   });
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
+  const [showOldPassword, setShowOldPassword] = useState(false);
 
   useEffect(() => {
     loadUserData();
@@ -146,13 +148,21 @@ const Settings = () => {
 
   const handleChangePassword = async () => {
     try {
-      if (formData.newPassword.trim() === '' || formData.confirmPassword.trim() === '') {
-        throw new Error('Please fill in both password fields');
+      if (oldPassword.trim() === '' || formData.newPassword.trim() === '' || formData.confirmPassword.trim() === '') {
+        throw new Error('Please fill in all password fields');
       }
 
       if (formData.newPassword !== formData.confirmPassword) {
         throw new Error('Passwords do not match');
       }
+
+      // Verifikasi password lama
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: formData.email, // Pastikan email diisi
+        password: oldPassword,
+      });
+
+      if (verifyError) throw new Error('Old password is incorrect');
 
       const { error } = await supabase.auth.updateUser({
         password: formData.newPassword,
@@ -171,6 +181,7 @@ const Settings = () => {
         newPassword: '',
         confirmPassword: ''
       });
+      setOldPassword(''); // Reset password lama
     } catch (error) {
       console.error('Error changing password:', error);
       toast({
@@ -354,7 +365,7 @@ const Settings = () => {
         </div>
 
         {/* Notification Settings */}
-        <div className="space-y-4">
+        {/* <div className="space-y-4">
           <h2 className="text-xl font-semibold">Notification Settings</h2>
           <Card className="p-6 space-y-6">
             <div className="flex items-center justify-between">
@@ -388,12 +399,35 @@ const Settings = () => {
               />
             </div>
           </Card>
-        </div>
+        </div> */}
 
         {/* Security Settings */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Security Settings</h2>
           <Card className="p-6 space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="oldPassword">Old Password</Label>
+              <div className="relative">
+                <Input
+                  id="oldPassword"
+                  type={showOldPassword ? 'text' : 'password'}
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                  placeholder="Enter old password"
+                />
+                <Button
+                  type="button"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 border-none bg-transparent hover:bg-transparent"
+                  onClick={() => setShowOldPassword(!showOldPassword)}
+                >
+                  {showOldPassword ? (
+                    <EyeOff className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
+                  ) : (
+                    <Eye className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
+                  )}
+                </Button>
+              </div>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="newPassword">New Password</Label>
               <div className="relative">
