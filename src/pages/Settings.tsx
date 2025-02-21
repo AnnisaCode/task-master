@@ -21,6 +21,7 @@ interface UserProfile {
   id: string;
   full_name: string | null;
   avatar_url: string | null;
+  phone: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -43,6 +44,7 @@ const Settings = () => {
     id: '',
     full_name: '',
     avatar_url: null,
+    phone: '',
     created_at: '',
     updated_at: ''
   });
@@ -55,6 +57,7 @@ const Settings = () => {
     created_at: '',
     updated_at: ''
   });
+  const [email, setEmail] = useState('');
 
   useEffect(() => {
     loadUserData();
@@ -66,6 +69,8 @@ const Settings = () => {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) throw new Error('User not found');
+
+      setEmail(user.email || '');
 
       // Load profile
       const { data: profileData, error: profileError } = await supabase
@@ -124,6 +129,29 @@ const Settings = () => {
 
       if (!user) throw new Error('User not found');
 
+      // Update email dengan verifikasi
+      if (email !== user.email) {
+        const { error: emailError } = await supabase.auth.updateUser({
+          email: email
+        });
+        if (emailError) throw emailError;
+
+        // Update email di tabel profiles
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            email: email // Update email di tabel profiles
+          })
+          .eq('id', user.id);
+
+        if (profileError) throw profileError;
+
+        toast({
+          title: "Email Update",
+          description: "Please check your new email for verification",
+        });
+      }
+
       // Update auth user data
       const { error: authError } = await supabase.auth.updateUser({
         data: {
@@ -133,16 +161,17 @@ const Settings = () => {
 
       if (authError) throw authError;
 
-      // Update profile
-      const { error: profileError } = await supabase
+      // Update profile (termasuk phone)
+      const { error: profileUpdateError } = await supabase
         .from('profiles')
         .update({
           full_name: profile.full_name,
+          phone: profile.phone,
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);
 
-      if (profileError) throw profileError;
+      if (profileUpdateError) throw profileUpdateError;
 
       // Update preferences
       const { error: preferencesError } = await supabase
@@ -192,6 +221,30 @@ const Settings = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+  };
+
+  const handlePhoneChange = (value: string) => {
+    // Hapus semua karakter non-digit
+    let cleaned = value.replace(/\D/g, '');
+
+    // Jika dimulai dengan 0, ganti dengan +62 (untuk Indonesia)
+    if (cleaned.startsWith('0')) {
+      cleaned = '62' + cleaned.substring(1);
+    }
+
+    // Tambahkan + di depan jika belum ada
+    if (cleaned && !cleaned.startsWith('+')) {
+      cleaned = '+' + cleaned;
+    }
+
+    setProfile(prev => ({
+      ...prev,
+      phone: cleaned
+    }));
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-8">
@@ -204,7 +257,7 @@ const Settings = () => {
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Profile Settings</h2>
           <Card className="p-6 space-y-4">
-            <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="full_name">Full Name</Label>
                 <Input
@@ -214,8 +267,34 @@ const Settings = () => {
                   placeholder="John Doe"
                 />
               </div>
-
-              {/* Avatar URL field could be added here if needed */}
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => handleEmailChange(e.target.value)}
+                  placeholder="john@example.com"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Changing email requires verification
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={profile.phone || ''}
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  placeholder="+628123456789"
+                  pattern="^\+[1-9]\d{1,14}$"
+                  title="Please enter phone number in international format (e.g. +628123456789)"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Enter phone number in international format (e.g. +628123456789)
+                </p>
+              </div>
             </div>
           </Card>
         </div>
