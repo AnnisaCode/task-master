@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { Eye, EyeOff } from "lucide-react";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ const Register = () => {
     password: '',
     name: ''
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -97,13 +99,22 @@ const Register = () => {
             <label htmlFor="password" className="text-sm font-medium">
               Password
             </label>
-            <Input
-              id="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Masukkan password"
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Masukkan password"
+              />
+              <Button
+                type="button"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 border-none bg-transparent hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Mendaftar..." : "Daftar"}

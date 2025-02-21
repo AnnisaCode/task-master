@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Bell, Shield, Globe, Palette, Mail, Sun, Moon } from "lucide-react";
+import { Bell, Shield, Globe, Palette, Mail, Sun, Moon, Eye, EyeOff } from "lucide-react";
 import { useTheme } from "next-themes";
 import { supabase } from '@/lib/supabase';
 import { useToast } from "@/components/ui/use-toast";
@@ -40,6 +40,13 @@ const Settings = () => {
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    newPassword: '',
+    confirmPassword: '',
+    fullName: '',
+    phone: ''
+  });
   const [profile, setProfile] = useState<UserProfile>({
     id: '',
     full_name: '',
@@ -57,7 +64,8 @@ const Settings = () => {
     created_at: '',
     updated_at: ''
   });
-  const [email, setEmail] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     loadUserData();
@@ -70,8 +78,6 @@ const Settings = () => {
 
       if (!user) throw new Error('User not found');
 
-      setEmail(user.email || '');
-
       // Load profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -80,6 +86,15 @@ const Settings = () => {
         .single();
 
       if (profileError) throw profileError;
+
+      // Set formData with user and profile data
+      setFormData({
+        email: user.email || '',
+        newPassword: '', // Pastikan ini kosong saat memuat data
+        confirmPassword: '', // Pastikan ini kosong saat memuat data
+        fullName: profileData?.full_name || '',
+        phone: profileData?.phone || ''
+      });
 
       // Load preferences
       let preferencesResult = await supabase
@@ -122,6 +137,50 @@ const Settings = () => {
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value
+    });
+  };
+
+  const handleChangePassword = async () => {
+    try {
+      if (formData.newPassword.trim() === '' || formData.confirmPassword.trim() === '') {
+        throw new Error('Please fill in both password fields');
+      }
+
+      if (formData.newPassword !== formData.confirmPassword) {
+        throw new Error('Passwords do not match');
+      }
+
+      const { error } = await supabase.auth.updateUser({
+        password: formData.newPassword,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Password changed successfully",
+      });
+
+      // Reset password fields
+      setFormData({
+        ...formData,
+        newPassword: '',
+        confirmPassword: ''
+      });
+    } catch (error) {
+      console.error('Error changing password:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to change password",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSave = async () => {
     try {
       setLoading(true);
@@ -130,9 +189,9 @@ const Settings = () => {
       if (!user) throw new Error('User not found');
 
       // Update email dengan verifikasi
-      if (email !== user.email) {
+      if (formData.email !== user.email) {
         const { error: emailError } = await supabase.auth.updateUser({
-          email: email
+          email: formData.email
         });
         if (emailError) throw emailError;
 
@@ -140,7 +199,7 @@ const Settings = () => {
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
-            email: email // Update email di tabel profiles
+            email: formData.email // Update email di tabel profiles
           })
           .eq('id', user.id);
 
@@ -155,7 +214,7 @@ const Settings = () => {
       // Update auth user data
       const { error: authError } = await supabase.auth.updateUser({
         data: {
-          full_name: profile.full_name
+          full_name: formData.fullName
         }
       });
 
@@ -165,8 +224,8 @@ const Settings = () => {
       const { error: profileUpdateError } = await supabase
         .from('profiles')
         .update({
-          full_name: profile.full_name,
-          phone: profile.phone,
+          full_name: formData.fullName,
+          phone: formData.phone,
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);
@@ -203,45 +262,14 @@ const Settings = () => {
     }
   };
 
-  const handleProfileChange = (value: string) => {
-    setProfile(prev => ({
-      ...prev,
-      full_name: value
-    }));
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
   const handlePreferencesChange = (field: keyof Omit<UserPreferences, 'id' | 'created_at' | 'updated_at'>, value: boolean | string) => {
     setPreferences(prev => ({
       ...prev,
       [field]: value
-    }));
-  };
-
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
-
-  const handleEmailChange = (value: string) => {
-    setEmail(value);
-  };
-
-  const handlePhoneChange = (value: string) => {
-    // Hapus semua karakter non-digit
-    let cleaned = value.replace(/\D/g, '');
-
-    // Jika dimulai dengan 0, ganti dengan +62 (untuk Indonesia)
-    if (cleaned.startsWith('0')) {
-      cleaned = '62' + cleaned.substring(1);
-    }
-
-    // Tambahkan + di depan jika belum ada
-    if (cleaned && !cleaned.startsWith('+')) {
-      cleaned = '+' + cleaned;
-    }
-
-    setProfile(prev => ({
-      ...prev,
-      phone: cleaned
     }));
   };
 
@@ -259,11 +287,11 @@ const Settings = () => {
           <Card className="p-6 space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="full_name">Full Name</Label>
+                <Label htmlFor="fullName">Full Name</Label>
                 <Input
-                  id="full_name"
-                  value={profile.full_name || ''}
-                  onChange={(e) => handleProfileChange(e.target.value)}
+                  id="fullName"
+                  value={formData.fullName}
+                  onChange={handleChange}
                   placeholder="John Doe"
                 />
               </div>
@@ -272,8 +300,8 @@ const Settings = () => {
                 <Input
                   id="email"
                   type="email"
-                  value={email}
-                  onChange={(e) => handleEmailChange(e.target.value)}
+                  value={formData.email}
+                  onChange={handleChange}
                   placeholder="john@example.com"
                 />
                 <p className="text-sm text-muted-foreground">
@@ -285,8 +313,8 @@ const Settings = () => {
                 <Input
                   id="phone"
                   type="tel"
-                  value={profile.phone || ''}
-                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  value={formData.phone}
+                  onChange={handleChange}
                   placeholder="+628123456789"
                   pattern="^\+[1-9]\d{1,14}$"
                   title="Please enter phone number in international format (e.g. +628123456789)"
@@ -366,24 +394,43 @@ const Settings = () => {
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Security Settings</h2>
           <Card className="p-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  <Label>Two-Factor Authentication</Label>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Add an extra layer of security to your account
-                </p>
-              </div>
-              <Switch
-                checked={preferences.two_factor_auth}
-                onCheckedChange={(checked) => handlePreferencesChange('two_factor_auth', checked)}
-              />
-            </div>
             <div className="space-y-2">
-              <Button variant="outline" className="w-full">Change Password</Button>
+              <Label htmlFor="newPassword">New Password</Label>
+              <div className="relative">
+                <Input
+                  id="newPassword"
+                  type={showNewPassword ? 'text' : 'password'}
+                  value={formData.newPassword}
+                  onChange={handleChange}
+                  placeholder="Enter new password"
+                />
+                <Button
+                  type="button"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 border-none bg-transparent hover:bg-transparent"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                >
+                  {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  placeholder="Confirm new password"
+                />
+                <Button
+                  type="button"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 border-none bg-transparent hover:bg-transparent"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
+            <Button variant="outline" className="w-full" onClick={handleChangePassword}>Change Password</Button>
           </Card>
         </div>
 
