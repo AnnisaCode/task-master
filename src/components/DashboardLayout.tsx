@@ -19,26 +19,32 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [fullName, setFullName] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
+      try {
+        setIsLoading(true);
+        const { data: { user }, error } = await supabase.auth.getUser();
 
-      if (error || !user) {
-        navigate('/login');
-        return;
+        if (error || !user) {
+          navigate('/login');
+          return;
+        }
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+
+        setUserEmail(user.email);
+        setFullName(profile?.full_name || 'User');
+      } finally {
+        setIsLoading(false);
       }
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', user.id)
-        .single();
-
-      setUserEmail(user.email);
-      setFullName(profile?.full_name || 'User');
     };
 
     getUser();
@@ -86,7 +92,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
             </nav>
             <div className="px-3 py-4 border-t">
               <div className="px-3 py-2 text-sm text-muted-foreground">
-                Signed in as: {fullName}
+                Signed in as: {isLoading ? "Loading..." : fullName}
               </div>
               <Button
                 variant="ghost"
@@ -138,7 +144,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
               </nav>
               <div className="px-3 py-4 border-t">
                 <div className="px-3 py-2 text-sm text-muted-foreground">
-                  Signed in as: {fullName}
+                  Signed in as: {isLoading ? "Loading..." : fullName}
                 </div>
                 <Button
                   variant="ghost"
